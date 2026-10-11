@@ -1,72 +1,57 @@
-# 20-20-20 KOReader Plugin
+# Eye Rest Timer (20-20-20 Fork) - KOReader Plugin
 
-A simple KOReader plugin that helps you follow the 20-20-20 eye-rest rule. It
-runs a background timer while KOReader is open, then shows a fullscreen black
-rest screen with a large countdown when the timer completes.
+An enhanced **fork** of the official 20-20-20 KOReader plugin. It provides a **zero-battery-drain, customizable Eye Rest & Break Timer** optimized for E-Ink e-readers (Kindle, Kobo) and Android devices.
 
-## Features
+---
 
-- Runs a configurable background timer.
-- Shows a fullscreen black rest screen when the interval completes.
-- Displays a large countdown from the configured number of seconds down to `0`.
-- Lets you configure the interval in minutes.
-- Lets you configure the rest screen countdown in seconds.
+## Fork Enhancements vs. Official
 
-## Prerequisites
+| Feature | Official Plugin | Enhanced Fork |
+| :--- | :--- | :--- |
+| **Battery Impact** | Continuous background timer loop (drains sleep mode battery). | **One-Time Manual Activation:** Zero automatic loops. |
+| **Post-Rest Action** | Automatically restarts next timer. | **Choice Prompt:** *"Start Next Timer"* or *"Continue Reading (No Timer)"*. |
+| **Night Mode** | Background inverts to white. | **Smart Theme Detection:** Guarantees dark overlay in Night Mode. |
+| **UI Feedback** | Silent execution. | **Toast Notifications:** Clear popups when timers start/stop. |
+| **Menu Options** | Basic toggle. | Dedicated **Start** and **Stop** menu buttons. |
+| **Customization** | Fixed 20m / 20s. | **Fully Custom:** 1–360 min intervals & 1–1800 sec rest durations. |
+| **Presets** | None. | **Quick Presets** (15m, 20m, 30m, 45m, 60m Pomodoro). |
+| **E-Ink Refresh** | Basic overlay dismiss. | **Clean Refresh:** Eliminates ghosting on screen close. |
 
-- KOReader installed on your e-reader.
-- USB access to your e-reader's KOReader folder.
+---
 
-## Compatibility
+## Quick Start
 
-Tested and working on:
+1. Copy `twenty_twenty_twenty.koplugin` to your `koreader/plugins/` directory.
+2. Restart KOReader.
+3. Access via **Tools** > **Eye Rest Timer** inside any document.
 
-- Kobo Libra Colour
-- KOReader on Android
+---
 
-It should work on other KOReader-supported devices too, but those have not been
-tested yet.
+## Configuration & Usage
 
-## Installation
+* **Start one-time timer:** Begins a single reading countdown.
+* **Stop one-time timer:** Cancels the active timer.
+* **Set Interval / Rest Duration:** Custom spin pickers.
+* **Quick Presets:** Instant schedule profiles.
+* **Show rest screen now:** Triggers rest overlay immediately.
 
-1. Download a ZIP of this repository.
-2. Unzip it.
-3. Make sure the unzipped folder is named `20-20-20.koplugin`.
-4. Connect your e-reader to your computer.
-5. Copy the `20-20-20.koplugin` folder into KOReader's `plugins` folder on your device.
+---
 
-   The final path should look like this:
+## Changelog
 
-   ```text
-   koreader/plugins/20-20-20.koplugin/
-   ```
+### v1.0.0 (Fork Release)
+* **Refactored:** Converted to manual one-time activation to fix Kindle sleep battery drain.
+* **Added:** Toast notifications (`InfoMessage`), post-rest completion dialog, and dedicated Start/Stop menu entries.
+* **Added:** Full range custom interval/duration spinners and Quick Presets menu.
+* **Fixed:** Night Mode color inversion, mobile font scaling, and E-Ink ghosting.
 
-6. Eject your e-reader safely.
-7. Restart KOReader.
+### v0.1.0 (Original Plugin)
+* Initial release of the basic 20-20-20 timer.
 
-## Configuration
+---
 
-1. Open KOReader.
-2. Open the main menu.
-3. Go to the `Tools` tab.
-4. Select `20-20-20 Timer`.
-5. Use the menu to enable or disable the timer, change the interval, change the
-   countdown duration, or show the rest screen immediately.
+## Credits & License
 
-Default settings:
-
-- Interval: `20` minutes
-- Countdown: `20` seconds
-- Timer: enabled on startup
-
-## Usage
-
-Once enabled, the plugin runs in the background. After the configured interval,
-KOReader shows a fullscreen black rest screen with the countdown. When the
-countdown finishes, the plugin closes the rest screen and starts the next
-interval automatically.
-
-## Keywords
-
-KOReader, e-reader, plugin, 20-20-20, eye rest, reading break, e-ink, timer,
-countdown, accessibility, KOReader plugin.
+* Based on the original `20-20-20.koplugin` for KOReader.
+* Refactored & enhanced with code assistance from **Gemini**.
+* Released under the **AGPL-3.0 License**.
