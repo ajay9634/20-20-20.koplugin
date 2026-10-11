@@ -266,7 +266,9 @@ function TwentyTwentyTwenty:showRestOverlay()
         seconds = self:getRestSeconds(),
         on_done = function()
             self._rest_overlay = nil
-            self:promptCompletionOptions()
+            UIManager:scheduleIn(0.2, function()
+                self:promptCompletionOptions()
+            end)
         end,
     }
     UIManager:show(self._rest_overlay)
@@ -277,12 +279,14 @@ function TwentyTwentyTwenty:promptCompletionOptions()
         text = _("Rest finished! What would you like to do next?"),
         ok_text = _("Start Next Timer"),
         cancel_text = _("Continue Reading (No Timer)"),
-        callback = function()
-            self:startSingleTimer()
-            UIManager:show(InfoMessage:new{
-                text = string.format(_("Eye rest timer started for %d minutes."), self:getIntervalMinutes()),
-                timeout = 3,
-            })
+        ok_callback = function()
+            UIManager:scheduleIn(0.1, function()
+                self:startSingleTimer()
+                UIManager:show(InfoMessage:new{
+                    text = string.format(_("Eye rest timer started for %d minutes."), self:getIntervalMinutes()),
+                    timeout = 3,
+                })
+            end)
         end,
         cancel_callback = function()
             self:stopTimer()
