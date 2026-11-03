@@ -23,9 +23,6 @@ It runs an unobtrusive background timer while you read or browse, displaying a f
 * **Power & Sleep Resilience**:
   * Seamlessly hooks into KOReader power events (`onSuspend` / `onResume`).
   * Pauses the countdown timer when the device goes to sleep and resumes right where you left off upon waking up.
-* **Instant Manual Break**:
-  * Includes a **"Show rest screen now"** menu option to trigger an immediate rest session on demand.
-
 ---
 
 ## 📋 Prerequisites
