@@ -1,31 +1,48 @@
-# 20-20-20 KOReader Plugin
+# 20-20-20 KOReader Plugin (Fork by Ajay9634)
 
-A simple KOReader plugin that helps you follow the 20-20-20 eye-rest rule. It
-runs a background timer while KOReader is open, then shows a fullscreen black
-rest screen with a large countdown when the timer completes.
+A feature-rich KOReader plugin designed to prevent digital eye strain by enforcing the **20-20-20 eye-rest rule** (every 20 minutes, look at something 20 feet away for 20 seconds).
 
-## Features
+It runs an unobtrusive background timer while you read or browse, displaying a fullscreen countdown screen when it is time to rest your eyes.
 
-- Runs a configurable background timer.
-- Shows a fullscreen black rest screen when the interval completes.
-- Displays a large countdown from the configured number of seconds down to `0`.
-- Lets you configure the interval in minutes.
-- Lets you configure the rest screen countdown in seconds.
+---
 
-## Prerequisites
+## 🌟 Key Features (0.1.1)
 
-- KOReader installed on your e-reader.
-- USB access to your e-reader's KOReader folder.
+* **Configurable Timers & Safety Bounds**:
+  * **Interval Timer**: Set reminders between **1 to 180 minutes** (Default: `20 min`).
+  * **Rest Countdown**: Set rest duration between **1 to 300 seconds** (Default: `20 sec`).
+* **Flexible Operating Scopes**:
+  * **Reading-Only Mode** *(Default)*: Operates exclusively while a book or document is open. Closing the document pauses the timer.
+  * **Global KOReader Mode**: Extends timer coverage across the entire KOReader application (including the File Manager and settings menus).
+* **Customizable Dark Mode Rest Screen**:
+  * Includes a dedicated toggle to control whether the fullscreen rest overlay uses standard or inverted colors.
+  * When **Dark mode rest screen** is checked, it displays a clean **black background with white text**. When unchecked, it displays a **white background with black text**.
+* **Session Rest Counter**:
+  * Tracks how many rest breaks you have taken during your current reading session.
+  * Displays the total in the main menu with a quick-tap option to reset the count to `0`.
+* **Power & Sleep Resilience**:
+  * Seamlessly hooks into KOReader power events (`onSuspend` / `onResume`).
+  * Pauses the countdown timer when the device goes to sleep and resumes right where you left off upon waking up.
+* **Instant Manual Break**:
+  * Includes a **"Show rest screen now"** menu option to trigger an immediate rest session on demand.
 
-## Compatibility
+---
 
-Tested and working on:
+## 📋 Prerequisites
 
-- Kobo Libra Colour
-- KOReader on Android
+* **KOReader** installed on your e-reader or device.
+* USB or file manager access to your device's KOReader installation folder.
 
-It should work on other KOReader-supported devices too, but those have not been
-tested yet.
+---
+
+## 📲 Compatibility
+
+Tested and verified on:
+* **Kobo** (including Kobo Libra Colour)
+* **Android** (KOReader for Android)
+* **Kindle** / **PocketBook** (standard KOReader plugins directory layout)
+
+---
 
 ## Installation
 
@@ -43,6 +60,8 @@ tested yet.
 
 6. Eject your e-reader safely.
 7. Restart KOReader.
+
+---
 
 ## Configuration
 
