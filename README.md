@@ -6,23 +6,28 @@ It runs an unobtrusive background timer while you read or browse, displaying a f
 
 ---
 
-## 🌟 Key Features (0.1.1)
+## 🌟 Key Features (0.1.2)
 
-* **Configurable Timers & Safety Bounds**:
-  * **Interval Timer**: Set reminders between **1 to 180 minutes** (Default: `20 min`).
-  * **Rest Countdown**: Set rest duration between **1 to 300 seconds** (Default: `20 sec`).
-* **Flexible Operating Scopes**:
-  * **Reading-Only Mode** *(Default)*: Operates exclusively while a book or document is open. Closing the document pauses the timer.
-  * **Global KOReader Mode**: Extends timer coverage across the entire KOReader application (including the File Manager and settings menus).
-* **Customizable Dark Mode Rest Screen**:
-  * Includes a dedicated toggle to control whether the fullscreen rest overlay uses standard or inverted colors.
-  * When **Dark mode rest screen** is checked, it displays a clean **black background with white text**. When unchecked, it displays a **white background with black text**.
-* **Session Rest Counter**:
-  * Tracks how many rest breaks you have taken during your current reading session.
-  * Displays the total in the main menu with a quick-tap option to reset the count to `0`.
-* **Power & Sleep Resilience**:
-  * Seamlessly hooks into KOReader power events (`onSuspend` / `onResume`).
-  * Pauses the countdown timer when the device goes to sleep and resumes right where you left off upon waking up.
+-- * Configurable Timers & Safety Bounds:
+--   - First Start Delay: Set an initial custom delay between 1 to 60 minutes before the very first reminder triggers.
+--   - Interval Timer: Set recurring reminders between 1 to 180 minutes (Default: 20 min).
+--   - Rest Countdown: Set rest duration between 1 to 300 seconds (Default: 20 sec).
+-- * Flexible Operating Scopes:
+--   - Reading-Only Mode (Default: Disabled): Operates exclusively while a book or document is open. Closing the document pauses and clears the timer.
+--   - Global KOReader Mode: Extends timer coverage across the entire KOReader application.
+-- * Live "Running from" Status & Persistence:
+--   - The Enable/Disable menu item dynamically tracks your state, showing "Disable timer (First delay: X min)" or "Disable timer (Running from HH:MM)".
+--   - Automatically refreshes and updates the exact "Running from" timestamp across app restarts, document re-readiness, and device wake-ups on both Android and E-ink platforms.
+-- * Customizable Reverse Colour Rest Screen:
+--   - Includes a dedicated toggle (Default: Disabled) to control whether the fullscreen rest overlay uses standard or inverted colors.
+--   - When checked, it displays a clean black background with white text. When unchecked, it displays a white background with black text, fully isolated from global KOReader night mode themes.
+-- * Session Rest Counter:
+--   - Tracks how many rest breaks you have taken during your current reading session.
+--   - Displays the total in the main menu with a quick-tap option to reset the count to 0.
+-- * Power & Sleep Resilience:
+--   - Seamlessly hooks into KOReader power and e-ink suspend/resume events (onSuspend, onResume, onUnsuspend).
+--   - Recalculates and keeps timestamps accurate when the device wakes up from sleep.
+
 ---
 
 ## 📋 Prerequisites
