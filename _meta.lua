@@ -1,7 +1,7 @@
 return {
     name = "20-20-20",
-    fullname = "20-20-20 Timer",
+    fullname = "20-20-20 Timer - Fork",
     description = [[Shows a fullscreen eye-rest reminder on a configurable interval, Improved by Ajay9634]],
-    version = "0.1.1",
+    version = "0.1.2",
     author = "Vardan",
 }
