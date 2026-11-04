@@ -5,6 +5,7 @@ local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local Notification = require("ui/widget/notification")
 local SpinWidget = require("ui/widget/spinwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
@@ -19,17 +20,21 @@ local INTERVAL_KEY = SETTINGS_PREFIX .. "interval_minutes"
 local REST_KEY = SETTINGS_PREFIX .. "rest_seconds"
 local DOC_ONLY_KEY = SETTINGS_PREFIX .. "is_doc_only"
 local DARK_MODE_KEY = SETTINGS_PREFIX .. "dark_mode"
+local FIRST_DELAY_KEY = SETTINGS_PREFIX .. "first_delay_minutes"
+local RUNNING_SINCE_KEY = SETTINGS_PREFIX .. "running_since"
 
 local DEFAULT_ENABLED = true
 local DEFAULT_INTERVAL_MINUTES = 20
 local DEFAULT_REST_SECONDS = 20
-local DEFAULT_DOC_ONLY = true
-local DEFAULT_DARK_MODE = false
+local DEFAULT_DOC_ONLY = false      -- Changed to false by default
+local DEFAULT_DARK_MODE = false     -- Changed to false by default
 
 local MIN_INTERVAL_MINUTES = 1
 local MAX_INTERVAL_MINUTES = 180
 local MIN_REST_SECONDS = 1
 local MAX_REST_SECONDS = 300
+local MIN_FIRST_DELAY = 1
+local MAX_FIRST_DELAY = 60
 
 local Screen = Device.screen
 local active_instance = nil
@@ -57,10 +62,7 @@ local function isDarkModeActive()
     if manual_setting ~= nil then
         return manual_setting == true
     end
-    if G_reader_settings and G_reader_settings:isTrue("night_mode") then
-        return true
-    end
-    return false
+    return DEFAULT_DARK_MODE
 end
 
 local RestOverlay = InputContainer:extend{
@@ -85,7 +87,6 @@ function RestOverlay:_buildContent()
     local area_w = math.floor(screen_w * 0.65)
     local area_h = math.floor(font_size * 1.7)
     
-    -- Fixed color mapping: When dark mode is active, use Black background with White text
     local is_dark = isDarkModeActive()
     local bg_color = is_dark and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE
     local fg_color = is_dark and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_BLACK
@@ -198,9 +199,22 @@ function TwentyTwentyTwenty:init()
     self:_migrateDefaults()
     
     if not self:isDocOnly() and self:isEnabled() then
-        self:startTimer()
-        logger.info("20-20-20: Global mode initialized, timer started.")
+        local t = os.date("*t", os.time())
+        G_reader_settings:saveSetting(RUNNING_SINCE_KEY, string.format("%02d:%02d", t.hour, t.min))
+
+        local first_delay = G_reader_settings:readSetting(FIRST_DELAY_KEY)
+        if first_delay then
+            self:startTimer(first_delay * 60)
+        else
+            self:startTimer()
+        end
     end
+end
+
+function TwentyTwentyTwenty:_updateRunningTimestamp()
+    local t = os.date("*t", os.time())
+    local formatted = string.format("%02d:%02d", t.hour, t.min)
+    G_reader_settings:saveSetting(RUNNING_SINCE_KEY, formatted)
 end
 
 function TwentyTwentyTwenty:_migrateDefaults()
@@ -216,6 +230,9 @@ function TwentyTwentyTwenty:_migrateDefaults()
     if G_reader_settings:readSetting(DOC_ONLY_KEY) == nil then
         G_reader_settings:saveSetting(DOC_ONLY_KEY, DEFAULT_DOC_ONLY)
     end
+    if G_reader_settings:readSetting(DARK_MODE_KEY) == nil then
+        G_reader_settings:saveSetting(DARK_MODE_KEY, DEFAULT_DARK_MODE)
+    end
 end
 
 function TwentyTwentyTwenty:isEnabled()
@@ -224,7 +241,7 @@ end
 
 function TwentyTwentyTwenty:isDocOnly()
     local val = readSetting(DOC_ONLY_KEY, DEFAULT_DOC_ONLY)
-    return val ~= false
+    return val == true
 end
 
 function TwentyTwentyTwenty:getIntervalMinutes()
@@ -276,6 +293,10 @@ function TwentyTwentyTwenty:startTimer(custom_delay)
     self._total_delay_seconds = delay
     self._timer_start_time = os.time()
     
+    if not custom_delay then
+        self:_updateRunningTimestamp()
+    end
+    
     self._interval_timer = UIManager:scheduleIn(delay, function()
         if timer_generation ~= self._timer_generation then
             return
@@ -283,6 +304,9 @@ function TwentyTwentyTwenty:startTimer(custom_delay)
         self._interval_timer = nil
         self._timer_start_time = nil
         self._remaining_seconds = nil
+        
+        G_reader_settings:saveSetting(FIRST_DELAY_KEY, nil)
+        self:_updateRunningTimestamp()
         self:showRestOverlay()
     end)
     logger.info("20-20-20: scheduled rest overlay in", delay, "seconds")
@@ -317,6 +341,7 @@ function TwentyTwentyTwenty:showRestOverlay()
         seconds = self:getRestSeconds(),
         on_done = function()
             self._rest_overlay = nil
+            self:_updateRunningTimestamp()
             self:startTimer()
         end,
     }
@@ -340,8 +365,14 @@ function TwentyTwentyTwenty:onReaderReady()
         self._remaining_seconds = nil
         self._timer_start_time = nil
         if self:isEnabled() then
-            self:startTimer()
-            logger.info("20-20-20: Reader ready, timer started.")
+            self:_updateRunningTimestamp()
+            local first_delay = G_reader_settings:readSetting(FIRST_DELAY_KEY)
+            if first_delay then
+                self:startTimer(first_delay * 60)
+            else
+                self:startTimer()
+            end
+            logger.info("20-20-20: Reader ready on e-ink device, timer scheduled.")
         end
     end
 end
@@ -350,23 +381,57 @@ function TwentyTwentyTwenty:onCloseDoc()
     if self:isDocOnly() then
         self:shutdown()
         self._session_run_count = 0
+        G_reader_settings:saveSetting(RUNNING_SINCE_KEY, nil)
         logger.info("20-20-20: Document closed, timer stopped.")
     end
 end
 
--- Global KOReader Sleep / Power Events
 function TwentyTwentyTwenty:onSuspend()
     self:stopTimer()
-    logger.info("20-20-20: onSuspend triggered, timer paused with remaining:", self._remaining_seconds)
+    logger.info("20-20-20: onSuspend triggered, timer paused.")
+end
+
+function TwentyTwentyTwenty:onUnsuspend()
+    self:onResume()
 end
 
 function TwentyTwentyTwenty:onResume()
     local active_condition = self:isDocOnly() and self.ui.document or not self:isDocOnly()
     if self:isEnabled() and active_condition then
-        local delay = self._remaining_seconds or (self:getIntervalMinutes() * 60)
+        self:_updateRunningTimestamp()
+        local first_delay = G_reader_settings:readSetting(FIRST_DELAY_KEY)
+        local delay = self._remaining_seconds or (first_delay and first_delay * 60) or (self:getIntervalMinutes() * 60)
         self:startTimer(delay)
-        logger.info("20-20-20: onResume triggered, timer resumed with delay:", delay)
+        logger.info("20-20-20: Resumed/Unsuspended on e-ink, timestamp updated.")
     end
+end
+
+function TwentyTwentyTwenty:openFirstDelayPicker(touchmenu_instance)
+    UIManager:show(SpinWidget:new{
+        title_text = _("First start delay"),
+        info_text = _("Minutes to wait before the very first reminder (1-60)."),
+        value = G_reader_settings:readSetting(FIRST_DELAY_KEY) or 5,
+        value_min = MIN_FIRST_DELAY,
+        value_max = MAX_FIRST_DELAY,
+        value_step = 1,
+        unit = _("min"),
+        ok_text = _("Set"),
+        cancel_text = _("Cancel"),
+        default_value = 5,
+        callback = function(spin)
+            local delay_mins = spin.value
+            G_reader_settings:saveSetting(FIRST_DELAY_KEY, delay_mins)
+            self._remaining_seconds = nil
+            
+            local active_condition = self:isDocOnly() and self.ui.document or not self:isDocOnly()
+            if self:isEnabled() and active_condition then
+                self:startTimer(delay_mins * 60)
+            end
+            if touchmenu_instance then
+                touchmenu_instance:updateItems()
+            end
+        end,
+    })
 end
 
 function TwentyTwentyTwenty:openIntervalPicker(touchmenu_instance)
@@ -385,7 +450,8 @@ function TwentyTwentyTwenty:openIntervalPicker(touchmenu_instance)
             self:saveIntervalMinutes(spin.value)
             self._remaining_seconds = nil
             local active_condition = self:isDocOnly() and self.ui.document or not self:isDocOnly()
-            if self:isEnabled() and active_condition then
+            if self:isEnabled() and active_condition and not G_reader_settings:readSetting(FIRST_DELAY_KEY) then
+                self:_updateRunningTimestamp()
                 self:startTimer()
             end
             if touchmenu_instance then
@@ -423,7 +489,21 @@ function TwentyTwentyTwenty:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text_func = function()
-                    return self:isEnabled() and _("Disable timer") or _("Enable timer")
+                    if not self:isEnabled() then
+                        return _("Enable timer")
+                    end
+                    local first_delay = G_reader_settings:readSetting(FIRST_DELAY_KEY)
+                    if first_delay then
+                        return string.format(_("Disable timer (First delay: %d min)"), first_delay)
+                    else
+                        local running_since = G_reader_settings:readSetting(RUNNING_SINCE_KEY)
+                        if running_since and running_since ~= "" then
+                            return string.format(_("Disable timer (Running from %s)"), running_since)
+                        else
+                            self:_updateRunningTimestamp()
+                            return string.format(_("Disable timer (Running from %s)"), G_reader_settings:readSetting(RUNNING_SINCE_KEY) or "00:00")
+                        end
+                    end
                 end,
                 checked_func = function()
                     return self:isEnabled()
@@ -434,9 +514,17 @@ function TwentyTwentyTwenty:addToMainMenu(menu_items)
                     local active_condition = self:isDocOnly() and self.ui.document or not self:isDocOnly()
                     if enabled and active_condition then
                         self._remaining_seconds = nil
-                        self:startTimer()
+                        self:_updateRunningTimestamp()
+                        
+                        local first_delay = G_reader_settings:readSetting(FIRST_DELAY_KEY)
+                        if first_delay then
+                            self:startTimer(first_delay * 60)
+                        else
+                            self:startTimer()
+                        end
                     else
                         self:stopTimer()
+                        G_reader_settings:saveSetting(RUNNING_SINCE_KEY, nil)
                     end
                     if touchmenu_instance then
                         touchmenu_instance:updateItems()
@@ -462,7 +550,14 @@ function TwentyTwentyTwenty:addToMainMenu(menu_items)
                     else
                         if self:isEnabled() and not self._interval_timer then
                             self._remaining_seconds = nil
-                            self:startTimer()
+                            self:_updateRunningTimestamp()
+                            
+                            local first_delay = G_reader_settings:readSetting(FIRST_DELAY_KEY)
+                            if first_delay then
+                                self:startTimer(first_delay * 60)
+                            else
+                                self:startTimer()
+                            end
                         end
                     end
 
@@ -474,7 +569,7 @@ function TwentyTwentyTwenty:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    return _("Dark mode rest screen")
+                    return _("Reverse colour rest screen")
                 end,
                 checked_func = function()
                     return isDarkModeActive()
@@ -487,6 +582,45 @@ function TwentyTwentyTwenty:addToMainMenu(menu_items)
                     end
                 end,
                 keep_menu_open = true,
+            },
+            {
+                text_func = function()
+                    local first_delay = G_reader_settings:readSetting(FIRST_DELAY_KEY)
+                    if first_delay then
+                        return string.format(_("First start delay: %d min"), first_delay)
+                    else
+                        return _("First start delay: Not set")
+                    end
+                end,
+                callback = function(touchmenu_instance)
+                    self:openFirstDelayPicker(touchmenu_instance)
+                end,
+                keep_menu_open = true,
+                info_text = _("Minutes to wait before the first rest reminder. Tap to configure."),
+            },
+            {
+                text = _("Cancel first delay"),
+                callback = function(touchmenu_instance)
+                    G_reader_settings:saveSetting(FIRST_DELAY_KEY, nil)
+                    self._remaining_seconds = nil
+                    
+                    self:_updateRunningTimestamp()
+                    local current_hm = G_reader_settings:readSetting(RUNNING_SINCE_KEY)
+                    
+                    local active_condition = self:isDocOnly() and self.ui.document or not self:isDocOnly()
+                    if self:isEnabled() and active_condition then
+                        self:startTimer()
+                    end
+                    
+                    UIManager:show(Notification:new{
+                        text = _("First delay cancelled. Running from " .. (current_hm or "")),
+                    })
+                    
+                    if touchmenu_instance then
+                        touchmenu_instance:updateItems()
+                    end
+                end,
+                info_text = _("Clears any custom first delay and starts the regular interval timer immediately."),
             },
             {
                 text_func = function()
